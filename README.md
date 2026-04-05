@@ -90,9 +90,18 @@ curl -s http://localhost:11434/v1/chat/completions \
 `entrypoint.sh` делает:
 1. Ждёт доступность Ollama.
 2. Проверяет, что модель уже существует в Ollama.
-3. Ставит OpenClaw через официальный install script (в non-interactive режиме).
+3. Ставит OpenClaw через официальный install script с флагами `--no-prompt --no-onboard` (non-interactive npm).
 4. Если CLI уже установлен, повторной установки не делает.
 5. Пытается запустить OpenClaw (`serve` или `start`).
+
+
+Если кажется, что контейнер "завис" на `install openclaw via official script`, посмотрите live-логи установки:
+
+```bash
+docker compose logs -f openclaw
+```
+
+Теперь инсталлятор пишет прогресс в stdout и в `/tmp/install.log` внутри контейнера.
 
 ## Важно для Windows PowerShell
 

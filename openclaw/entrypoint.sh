@@ -64,12 +64,14 @@ cleanup_node_conflicts() {
 install_openclaw() {
   log "install openclaw via official script"
   cleanup_node_conflicts
-  curl -fsSL https://openclaw.ai/install.sh -o /tmp/install.sh
-  CI=1 NONINTERACTIVE=1 bash /tmp/install.sh > /tmp/install.log 2>&1 || {
+  curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.ai/install.sh -o /tmp/install.sh
+  if ! CI=1 OPENCLAW_NO_PROMPT=1 OPENCLAW_NO_ONBOARD=1 \
+    bash /tmp/install.sh --no-prompt --no-onboard --install-method npm \
+    2>&1 | tee /tmp/install.log; then
     log "install failed; showing tail"
     tail -n 120 /tmp/install.log || true
     return 1
-  }
+  fi
   return 0
 }
 
