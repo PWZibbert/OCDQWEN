@@ -1,0 +1,54 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_KEEP_ALIVE=24h
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - ai-net
+
+  openclaw:
+    build:
+      context: ./openclaw
+      dockerfile: Dockerfile
+    container_name: openclaw
+    restart: "no"
+    command: ["bash", "-lc", "sleep infinity"]
+    depends_on:
+      - ollama
+    environment:
+      - MODEL=qwen2.5-coder:14b
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OPENAI_BASE_URL=http://ollama:11434/v1
+      - OPENAI_API_KEY=ollama
+    volumes:
+      - openclaw-data:/data
+    ports:
+      - "8080:8080"
+    environment:
+      - OPENAI_BASE_URL=http://ollama:11434/v1
+      - OPENAI_API_KEY=ollama
+      - MODEL=qwen2.5-coder:14b
+    networks:
+      - ai-net
+
+volumes:
+  ollama-data:
+  openclaw-data:
+
+networks:
+  ai-net:
+    driver: bridge
