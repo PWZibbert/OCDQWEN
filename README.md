@@ -36,6 +36,14 @@ docker compose ps
 - `ollama-init` — `exited (0)`
 - `openclaw` — `running`
 
+
+> Если `ollama` уходит в `unhealthy`, проверьте health-логи:
+>
+> ```bash
+> docker inspect --format='{{json .State.Health}}' ollama
+> docker compose logs --tail=200 ollama
+> ```
+
 ## Как убедиться, что Qwen работает
 
 ### 1) Модель загружена
