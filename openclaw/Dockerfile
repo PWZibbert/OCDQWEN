@@ -11,8 +11,6 @@ RUN apt-get update && apt-get install -y \
     git \
     iproute2 \
     jq \
-    nodejs \
-    npm \
     procps \
     python3 \
     && rm -rf /var/lib/apt/lists/*

@@ -50,8 +50,20 @@ find_openclaw_cmd() {
   echo ""
 }
 
+
+cleanup_node_conflicts() {
+  if dpkg -s nodejs >/dev/null 2>&1 || dpkg -s libnode-dev >/dev/null 2>&1 || dpkg -s npm >/dev/null 2>&1; then
+    log "remove distro node packages to avoid NodeSource conflicts"
+    apt-get update >/dev/null 2>&1 || true
+    apt-get remove -y nodejs libnode-dev nodejs-doc npm >/dev/null 2>&1 || true
+    apt-get autoremove -y >/dev/null 2>&1 || true
+    rm -rf /var/lib/apt/lists/* || true
+  fi
+}
+
 install_openclaw() {
   log "install openclaw via official script"
+  cleanup_node_conflicts
   curl -fsSL https://openclaw.ai/install.sh -o /tmp/install.sh
   CI=1 NONINTERACTIVE=1 bash /tmp/install.sh > /tmp/install.log 2>&1 || {
     log "install failed; showing tail"

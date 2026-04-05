@@ -106,6 +106,14 @@ curl.exe -fsSL https://openclaw.ai/install.sh | bash
 
 или запуск из Git Bash/WSL.
 
+
+Если в логах OpenClaw есть ошибка `trying to overwrite ... common.gypi` (конфликт Node.js пакетов), выполните:
+
+```bash
+docker compose exec openclaw bash -lc "apt-get update && apt-get remove -y nodejs libnode-dev nodejs-doc npm && apt-get autoremove -y"
+docker compose restart openclaw
+```
+
 ## Ручная донастройка OpenClaw
 
 Если нужно зайти в контейнер без entrypoint, используйте:
