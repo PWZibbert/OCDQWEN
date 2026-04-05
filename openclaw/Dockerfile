@@ -3,16 +3,13 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     bash \
-    build-essential \
     ca-certificates \
-    cmake \
     curl \
     findutils \
     git \
     iproute2 \
     jq \
     procps \
-    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

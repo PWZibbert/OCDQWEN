@@ -34,15 +34,7 @@ docker compose ps
 Ожидаем:
 - `ollama` — `healthy`
 - `ollama-init` — `exited (0)`
-- `openclaw` — `running`
-
-
-> Если `ollama` уходит в `unhealthy`, проверьте health-логи:
->
-> ```bash
-> docker inspect --format='{{json .State.Health}}' ollama
-> docker compose logs --tail=200 ollama
-> ```
+- `openclaw` — `running` (или `running`, но может ждать ручной команды, если CLI отличается)
 
 ## Как убедиться, что Qwen работает
 
@@ -64,6 +56,8 @@ curl -s http://localhost:11434/api/generate \
     "stream": false
   }' | jq -r '.response'
 ```
+
+Если получен осмысленный ответ — контейнер с LLM готов к работе.
 
 ### 3) Проверка OpenAI-совместимого endpoint
 
@@ -90,59 +84,45 @@ curl -s http://localhost:11434/v1/chat/completions \
 `entrypoint.sh` делает:
 1. Ждёт доступность Ollama.
 2. Проверяет, что модель уже существует в Ollama.
-3. Ставит OpenClaw через официальный install script с флагами `--no-prompt --no-onboard` (non-interactive npm).
-4. Если CLI уже установлен, повторной установки не делает.
-5. Пытается запустить OpenClaw (`serve` или `start`).
+3. Ставит OpenClaw через официальный install script.
+4. Пытается запустить OpenClaw (`serve` или `start`, если такая команда есть в вашей версии CLI).
+5. Если команда запуска не найдена — оставляет контейнер живым для ручной настройки.
 
+## Ручная донастройка OpenClaw (если понадобилась)
 
-Если кажется, что контейнер "завис" на `install openclaw via official script`, посмотрите live-логи установки:
+Посмотреть логи:
 
 ```bash
 docker compose logs -f openclaw
 ```
 
-Теперь инсталлятор пишет прогресс в stdout и в `/tmp/install.log` внутри контейнера.
-
-## Важно для Windows PowerShell
-
-В PowerShell `curl` — это alias на `Invoke-WebRequest` (не поддерживает флаги `-fsSL`).
-
-Используйте:
-
-```powershell
-curl.exe -fsSL https://openclaw.ai/install.sh | bash
-```
-
-или запуск из Git Bash/WSL.
-
-
-Если в логах OpenClaw есть ошибка `trying to overwrite ... common.gypi` (конфликт Node.js пакетов), выполните:
+Зайти внутрь контейнера:
 
 ```bash
-docker compose exec openclaw bash -lc "apt-get update && apt-get remove -y nodejs libnode-dev nodejs-doc npm && apt-get autoremove -y"
-docker compose restart openclaw
+docker compose exec openclaw bash
 ```
 
-## Ручная донастройка OpenClaw
-
-Если нужно зайти в контейнер без entrypoint, используйте:
+Посмотреть доступные команды:
 
 ```bash
-docker compose run --rm --entrypoint bash openclaw
-```
-
-Проверка CLI:
-
-```bash
-openclaw --help || claw --help
+openclaw --help
 cat /tmp/openclaw-help.txt
 ```
 
-Логи:
+Запустить вручную (пример):
 
 ```bash
-docker compose logs -f openclaw
+openclaw serve --host 0.0.0.0 --port 8080
 ```
+
+## Если хотите «в одном образе»
+
+Технически возможно собрать единый кастомный образ с Ollama+OpenClaw, но это хуже для эксплуатации:
+- сложнее обновлять и дебажить;
+- нарушается принцип «один процесс = один контейнер»;
+- труднее управлять GPU/перезапусками.
+
+Текущая схема в одном `docker-compose.yaml` — минимально сложная и наиболее практичная.
 
 ## Полезные команды
 
