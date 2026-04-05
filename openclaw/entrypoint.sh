@@ -37,9 +37,21 @@ if [[ ! -f /data/.openclaw_installed ]]; then
   bash /tmp/install.sh > /tmp/install.log 2>&1 || {
     log "install failed; showing tail"
     tail -n 120 /tmp/install.log || true
+    return 1
+  fi
+  return 0
+}
+
+openclaw_cmd="$(find_openclaw_cmd)"
+
+if [[ ! -f /data/.openclaw_installed ]] || [[ -z "$openclaw_cmd" ]]; then
+  if ! install_openclaw; then
     exit 1
-  }
-  touch /data/.openclaw_installed
+  fi
+  openclaw_cmd="$(find_openclaw_cmd)"
+  if [[ -n "$openclaw_cmd" ]]; then
+    touch /data/.openclaw_installed
+  fi
 fi
 
 export PATH="/root/.local/bin:/root/.openclaw/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
