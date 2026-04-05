@@ -8,8 +8,14 @@ services:
     volumes:
       - ollama-data:/root/.ollama
     environment:
-      - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_KEEP_ALIVE=24h
+      OLLAMA_HOST: 0.0.0.0
+      OLLAMA_KEEP_ALIVE: 24h
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
     deploy:
       resources:
         reservations:
@@ -20,28 +26,49 @@ services:
     networks:
       - ai-net
 
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ollama-init
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-lc"]
+    command: >-
+      "
+      set -e;
+      echo '[ollama-init] pull qwen2.5-coder:14b';
+      ollama pull qwen2.5-coder:14b;
+      echo '[ollama-init] smoke test';
+      ollama run qwen2.5-coder:14b 'Answer with one word: ready';
+      "
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    networks:
+      - ai-net
+
   openclaw:
     build:
       context: ./openclaw
       dockerfile: Dockerfile
     container_name: openclaw
-    restart: "no"
-    command: ["bash", "-lc", "sleep infinity"]
+    restart: unless-stopped
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
     environment:
-      - MODEL=qwen2.5-coder:14b
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - OPENAI_BASE_URL=http://ollama:11434/v1
-      - OPENAI_API_KEY=ollama
+      MODEL: qwen2.5-coder:14b
+      OLLAMA_BASE_URL: http://ollama:11434
+      OPENAI_BASE_URL: http://ollama:11434/v1
+      OPENAI_API_KEY: ollama
+      OPENCLAW_HOST: 0.0.0.0
+      OPENCLAW_PORT: 8080
     volumes:
       - openclaw-data:/data
     ports:
       - "8080:8080"
-    environment:
-      - OPENAI_BASE_URL=http://ollama:11434/v1
-      - OPENAI_API_KEY=ollama
-      - MODEL=qwen2.5-coder:14b
     networks:
       - ai-net
 
